@@ -3,69 +3,70 @@ package telran.employee.dao;
 import telran.employee.model.Employee;
 import telran.employee.model.SalesManager;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 
 public class CompanyImpl implements Company {
-    private Employee[] employees;
-    private int size;
+    private List<Employee> employees;
+    private int capacity;
 
     public CompanyImpl(int capacity) {
-        employees = new Employee[capacity];
+        this.capacity = capacity;
+        employees = new ArrayList<Employee>();
     }
 
+    //O(n)
     @Override
     public boolean addEmployee(Employee employee) {
-        if (employee == null || size == employees.length || findEmployee(employee.getId()) != null) {
+        if (employee == null || capacity == employees.size() || findEmployee(employee.getId()) != null) {
             return false;
         }
-        employees[size++] = employee;
-        return true;
+        return employees.add(employee);
     }
 
+    //O(n)
     @Override
     public Employee removeEmployee(int id) {
-        Employee tmp;
-        for (int i = 0; i < size; i++) {
-            if (employees[i].getId() == id) {
-                tmp = employees[i];
-                employees[i] = employees[--size];
-                employees[size] = null;
-                return tmp;
-            }
-        }
-        return null;
+        Employee victim = findEmployee(id);
+        employees.remove(victim);
+        return victim;
     }
 
+    //O(n)
     @Override
     public Employee findEmployee(int id) {
-        for (int i = 0; i < size; i++) {
-            if (employees[i].getId() == id) {
-                return employees[i];
+        for (Employee emp : employees) {
+            if (emp.getId() == id) {
+                return emp;
             }
         }
         return null;
     }
 
+    //O(1)
     @Override
     public int quantity() {
-        return size;
+        return employees.size();
     }
 
+    //O(n)
     @Override
     public double totalSalary() {
         double sum = 0;
-        for (int i = 0; i < size; i++) {
-            sum += employees[i].calcSalary();
+        for (Employee emp : employees) {
+            sum += emp.calcSalary();
         }
         return sum;
     }
 
+    //O(n)
     @Override
     public double totalSales() {
         double sum = 0;
-        for (int i = 0; i < size; i++) {
-            if (employees[i] instanceof SalesManager) {
-                sum += ((SalesManager) employees[i]).getSalesValue();
+        for (Employee emp : employees) {
+            if (emp instanceof SalesManager) {
+                sum += ((SalesManager) emp).getSalesValue();
             }
         }
         return sum;
@@ -74,11 +75,11 @@ public class CompanyImpl implements Company {
     @Override
     public void printEmployees() {
         System.out.println("==== " + COUNTRY + " ====");
-        for (int i = 0; i < size; i++) {
-            System.out.println(employees[i]);
+        for (Employee emp : employees) {
+            System.out.println(emp);
         }
         System.out.println("Company's capacity = " + quantity());
-        System.out.println("Amount of employees = " + size);
+        System.out.println("Amount of employees = " + employees.size());
         System.out.println("Total salary = " + totalSalary());
         System.out.println("Average salary = " + avgSalary());
         System.out.println("Total sales = " + totalSales());
@@ -86,51 +87,22 @@ public class CompanyImpl implements Company {
 
     @Override
     public Employee[] findEmployeesHoursGreaterThan(int hours) {
-        int count = 0;
-        for (int i = 0; i < size; i++) {
-            if (employees[i].getHours() > hours) {
-                count++;
-            }
-        }
-        Employee[] res = new Employee[count];
-        for (int i = 0, j = 0; j < res.length; i++) {
-            if (employees[i].getHours() > hours) {
-                res[j++] = employees[i];
-            }
-        }
-        return res;
+        return findEmployeesByPredicate(e -> e.getHours() > hours);
     }
 
     @Override
     public Employee[] findEmployeesSalaryBetween(int minSalary, int maxSalary) {
-        int count = 0;
-        for (int i = 0; i < size; i++) {
-            if (employees[i].calcSalary() >= minSalary && employees[i].calcSalary() < maxSalary) {
-                count++;
-            }
-        }
-        Employee[] res = new Employee[count];
-        for (int i = 0, j = 0; j < res.length; i++) {
-            if (employees[i].calcSalary() >= minSalary && employees[i].calcSalary() < maxSalary) {
-                res[j++] = employees[i];
-            }
-        }
-        return res;
+        return findEmployeesByPredicate(e -> e.calcSalary() >= minSalary && e.calcSalary() < maxSalary);
     }
 
+    //O(n)
     private Employee[] findEmployeesByPredicate(Predicate<Employee> predicate) {
-        int count = 0;
-        for (int i = 0; i < size; i++) {
-            if (predicate.test(employees[i])) {
-                count++;
+        List<Employee> res = new ArrayList<>();
+        for (Employee emp : employees) {
+            if (predicate.test(emp)) {
+                res.add(emp);
             }
         }
-        Employee[] res = new Employee[count];
-        for (int i = 0, j = 0; j < res.length; i++) {
-            if (predicate.test(employees[i])) {
-                res[j++] = employees[i];
-            }
-        }
-        return res;
+        return res.toArray(new Employee[res.size()]);
     }
 }
